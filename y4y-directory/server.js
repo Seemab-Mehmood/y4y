@@ -219,32 +219,109 @@ app.post("/api/collaborations/:id/interest", async (req, res) => {
   res.json(collab);
 });
 
-// A simple, secure check for Admin actions
+// Secure Admin Dashboard Route
 app.get('/admin-panel', (req, res) => {
     const password = req.query.secret;
     const correctPassword = process.env.ADMIN_PASSWORD;
 
-    // If no password is set on Render yet, or it doesn't match
     if (!correctPassword || password !== correctPassword) {
-        return res.status(403).send('Access Denied: Invalid Secret Key.');
+        return res.status(403).send('<h1>Access Denied: Invalid Secret Key.</h1>');
     }
 
-    // If the password matches, serve your admin controls
+    // NOTE: Replace 'regionsData' below with whatever your actual data variable array is named in server.js!
+    // If your submissions are saved in an array or a file, we read them here.
+    const submissions = typeof regionsData !== 'undefined' ? regionsData : []; 
+
+    let tableRows = '';
+    
+    // Check if there are any listings to manage
+    if (submissions.length === 0) {
+        tableRows = `<tr><td colspan="5" style="text-align:center; padding:20px;">No directory registries found.</td></tr>`;
+    } else {
+        submissions.forEach((item, index) => {
+            // Assume items have an id, name, region, and status. Fall back if undefined.
+            const name = item.name || item.organization || 'Unnamed Entry';
+            const region = item.region || 'Global';
+            const status = item.verified ? '✅ Verified' : '⏳ Pending 24h Verification';
+            
+            tableRows += `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 12px;">${index + 1}</td>
+                    <td style="padding: 12px;"><strong>${name}</strong></td>
+                    <td style="padding: 12px;"><span style="background:#eef; padding:4px 8px; border-radius:4px;">${region}</span></td>
+                    <td style="padding: 12px;">${status}</td>
+                    <td style="padding: 12px;">
+                        <form action="/admin/verify/${index}?secret=${password}" method="POST" style="display:inline;">
+                            <button style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right:5px;">Verify</button>
+                        </form>
+                        <form action="/admin/delete/${index}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to permanently delete this submission?');">
+                            <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Send down the functional Admin UI
     res.send(`
+        <!DOCTYPE html>
         <html>
-            <body style="font-family: Arial, sans-serif; padding: 40px; text-align: center;">
-                <h2>👑 Y4Y Directory Admin Controls</h2>
-                <p>You are successfully logged in as Admin.</p>
-                <hr />
-                <!-- Add your feature toggle buttons or deletion tools here -->
-                <button onclick="alert('Feature turned off!')" style="padding: 10px 20px; cursor: pointer;">
-                    Disable Opportunity Hub
-                </button>
-            </body>
+        <head>
+            <title>Y4Y Directory Admin</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 40px;">
+            <div style="max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #2c3e50;">👑 Y4Y Global Directory — Master Administration</h2>
+                    <span style="background: #2c3e50; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">Logged in as Super Admin</span>
+                </div>
+                
+                <p style="color: #666; margin-bottom: 30px;">Use this control panel to moderate new directory submissions, remove registrations instantly, or execute standard 24-hour verification compliance.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px;">#</th>
+                            <th style="padding: 12px;">Organization Name</th>
+                            <th style="padding: 12px;">WHO Region / Country</th>
+                            <th style="padding: 12px;">Verification Window Status</th>
+                            <th style="padding: 12px;">Administrative Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        </body>
         </html>
     `);
 });
 
+// Action Route: Execute Verification
+app.post('/admin/verify/:id', (req, res) => {
+    const password = req.query.secret;
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+    
+    const id = parseInt(req.params.id);
+    if (typeof regionsData !== 'undefined' && regionsData[id]) {
+        regionsData[id].verified = true; // Flips status to verified
+    }
+    res.redirect(`/admin-panel?secret=${password}`);
+});
+
+// Action Route: Delete Submissions/Registry Entries
+app.post('/admin/delete/:id', (req, res) => {
+    const password = req.query.secret;
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+    
+    const id = parseInt(req.params.id);
+    if (typeof regionsData !== 'undefined' && regionsData[id]) {
+        regionsData.splice(id, 1); // Permanently removes the entry from memory array
+    }
+    res.redirect(`/admin-panel?secret=${password}`);
+});
 // ---------------------------------------------------------------------------
 // Invitations / Opportunities
 // ---------------------------------------------------------------------------
