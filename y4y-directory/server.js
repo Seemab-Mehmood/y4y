@@ -219,6 +219,32 @@ app.post("/api/collaborations/:id/interest", async (req, res) => {
   res.json(collab);
 });
 
+// A simple, secure check for Admin actions
+app.get('/admin-panel', (req, res) => {
+    const password = req.query.secret;
+    const correctPassword = process.env.ADMIN_PASSWORD;
+
+    // If no password is set on Render yet, or it doesn't match
+    if (!correctPassword || password !== correctPassword) {
+        return res.status(403).send('Access Denied: Invalid Secret Key.');
+    }
+
+    // If the password matches, serve your admin controls
+    res.send(`
+        <html>
+            <body style="font-family: Arial, sans-serif; padding: 40px; text-align: center;">
+                <h2>👑 Y4Y Directory Admin Controls</h2>
+                <p>You are successfully logged in as Admin.</p>
+                <hr />
+                <!-- Add your feature toggle buttons or deletion tools here -->
+                <button onclick="alert('Feature turned off!')" style="padding: 10px 20px; cursor: pointer;">
+                    Disable Opportunity Hub
+                </button>
+            </body>
+        </html>
+    `);
+});
+
 // ---------------------------------------------------------------------------
 // Invitations / Opportunities
 // ---------------------------------------------------------------------------
