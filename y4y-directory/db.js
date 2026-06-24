@@ -1,10 +1,11 @@
-// db.js — lightweight JSON-file persistence (no external database required).
-// Good enough for a real demo / small-to-medium deployment; swap for Postgres/Mongo later if needed.
+// db.js — Upgraded to sync lightweight JSON persistence with Render Postgres
+const { Pool } = require('pg');
 
-const fs = require("fs");
-const path = require("path");
-
-const DB_PATH = path.join(__dirname, "data", "db.json");
+// 1. Connect to your Render PostgreSQL DB
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 const DEFAULT_DB = {
   organizations: [],
@@ -15,38 +16,66 @@ const DEFAULT_DB = {
   nextInvId: 1
 };
 
-function ensureDb() {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-    fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2));
+// Internal variable acting as our fast local memory cache
+let cachedDb = null;
+
+// Initialize the cloud table and load data into memory on startup
+async function initCloudDb() {
+  try {
+    // Create a storage table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS cloud_json_store (
+        id INT PRIMARY KEY,
+        data TEXT NOT NULL
+      );
+    `);
+
+    // Try to pull existing records
+    const res = await pool.query("SELECT data FROM cloud_json_store WHERE id = 1");
+    if (res.rows.length > 0) {
+      cachedDb = JSON.parse(res.rows[0].data);
+      console.log("🚀 Data loaded successfully from Render Cloud PostgreSQL.");
+    } else {
+      // First time running? Seed database with empty defaults
+      cachedDb = DEFAULT_DB;
+      await pool.query(
+        "INSERT INTO cloud_json_store (id, data) VALUES (1, $1)",
+        [JSON.stringify(DEFAULT_DB)]
+      );
+      console.log("🌱 Cloud Database initialized with default empty collections.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to connect or initialize Cloud Database. Falling back to empty defaults:", err.message);
+    cachedDb = DEFAULT_DB;
   }
 }
 
+// Run initialization immediately on server bootup
+initCloudDb();
+
 function readDb() {
-  ensureDb();
-  const raw = fs.readFileSync(DB_PATH, "utf-8");
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error("Corrupt db.json, resetting to defaults:", err.message);
-    fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2));
-    return JSON.parse(JSON.stringify(DEFAULT_DB));
-  }
+  // If server is still booting or cloud failed, give it the cache
+  return cachedDb || DEFAULT_DB;
 }
 
 let writeQueue = Promise.resolve();
 function writeDb(data) {
-  // Serialize writes so concurrent requests never interleave/corrupt the file.
-  writeQueue = writeQueue.then(
-    () =>
-      new Promise((resolve, reject) => {
-        fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), (err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      })
-  );
+  cachedDb = data; // Instantly update cache so reads are lighting fast
+
+  // Queue up the save to the cloud so concurrent requests don't overlap
+  writeQueue = writeQueue.then(async () => {
+    try {
+      await pool.query(
+        "UPDATE cloud_json_store SET data = $1 WHERE id = 1",
+        [JSON.stringify(data)]
+      );
+    } catch (err) {
+      console.error("❌ Cloud Sync Error: Failed to save changes to PostgreSQL:", err.message);
+    }
+  });
+
   return writeQueue;
 }
 
+module.exports = { readDb, writeDb };
 module.exports = { readDb, writeDb };
