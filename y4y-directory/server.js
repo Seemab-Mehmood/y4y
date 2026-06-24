@@ -220,7 +220,7 @@ app.post("/api/collaborations/:id/interest", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 👑 Super Admin Dashboard Panel
+// 👑 Super Admin Dashboard Panel (Master Control for All Features)
 // ---------------------------------------------------------------------------
 
 app.get('/admin-panel', async (req, res) => {
@@ -231,115 +231,179 @@ app.get('/admin-panel', async (req, res) => {
     return res.status(403).send('<h1>Access Denied: Invalid Secret Key.</h1>');
   }
 
-  // Read live data using your built-in db helper
+  // Read all live data collections from your cloud sync db
   const db = readDb();
-  const submissions = db.organizations || [];
+  const organizations = db.organizations || [];
+  const collaborations = db.collaborations || [];
+  const invitations = db.invitations || [];
 
-  let tableRows = '';
-  
-  if (submissions.length === 0) {
-    tableRows = `<tr><td colspan="5" style="text-align:center; padding:20px;">No directory registries found.</td></tr>`;
+  // --- 1. BUILD ORGANIZATIONS TABLE ROWS ---
+  let orgRows = '';
+  if (organizations.length === 0) {
+    orgRows = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#999;">No directory registries found.</td></tr>`;
   } else {
-    submissions.forEach((item) => {
-      const name = item.name || 'Unnamed Entry';
-      const region = item.regionName || item.region || 'Global';
-      const country = item.countryName || 'Unknown Country';
+    organizations.forEach((item) => {
       const status = item.verified 
         ? '<span style="color: #28a745; font-weight: bold;">✅ Verified</span>' 
-        : '<span style="color: #fd7e14; font-weight: bold;">⏳ Pending 24h Verification</span>';
-      
-      tableRows += `
+        : '<span style="color: #fd7e14; font-weight: bold;">⏳ Pending 24h</span>';
+      orgRows += `
         <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 12px; font-family: monospace;">${item.id}</td>
-          <td style="padding: 12px;">
-            <strong>${name}</strong><br>
-            <small style="color:#666">${item.email}</small>
-          </td>
-          <td style="padding: 12px;">
-            <span style="background:#eef; padding:4px 8px; border-radius:4px; font-size:12px;">${region}</span><br>
-            <small>${country}</small>
-          </td>
-          <td style="padding: 12px;">${status}</td>
-          <td style="padding: 12px;">
+          <td style="padding: 10px; font-family: monospace; font-size:12px;">${item.id}</td>
+          <td style="padding: 10px;"><strong>${item.name}</strong><br><small style="color:#666">${item.email}</small></td>
+          <td style="padding: 10px;"><span style="background:#eef; padding:2px 6px; border-radius:4px; font-size:12px;">${item.regionName || item.region || 'Global'}</span></td>
+          <td style="padding: 10px;">${status}</td>
+          <td style="padding: 10px;">
             ${!item.verified ? `
-            <form action="/admin/verify/${item.id}?secret=${password}" method="POST" style="display:inline;">
-              <button style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right:5px;">Verify App entry</button>
-            </form>
-            ` : ''}
-            <form action="/admin/delete/${item.id}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to permanently delete this submission?');">
-              <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+            <form action="/admin/verify/org/${item.id}?secret=${password}" method="POST" style="display:inline;">
+              <button style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Verify</button>
+            </form>` : ''}
+            <form action="/admin/delete/org/${item.id}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this directory listing?');">
+              <button style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
             </form>
           </td>
-        </tr>
-      `;
+        </tr>`;
     });
   }
 
+  // --- 2. BUILD COLLABORATIONS TABLE ROWS ---
+  let collabRows = '';
+  if (collaborations.length === 0) {
+    collabRows = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">No collaboration proposals posted.</td></tr>`;
+  } else {
+    collaborations.forEach((item) => {
+      collabRows += `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 10px; font-family: monospace; font-size:12px;">${item.id}</td>
+          <td style="padding: 10px;"><strong>${item.title}</strong><br><small style="color:#666">By: ${item.organizationName}</small></td>
+          <td style="padding: 10px;"><span style="background:#eafaf1; color:#257a48; padding:2px 6px; border-radius:4px; font-size:12px;">${item.type}</span></td>
+          <td style="padding: 10px;">
+            <form action="/admin/delete/collab/${item.id}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this collaboration post?');">
+              <button style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
+            </form>
+          </td>
+        </tr>`;
+    });
+  }
+
+  // --- 3. BUILD OPPORTUNITIES / INVITATIONS TABLE ROWS ---
+  let invRows = '';
+  if (invitations.length === 0) {
+    invRows = `<tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">No opportunities or invitations active.</td></tr>`;
+  } else {
+    invitations.forEach((item) => {
+      invRows += `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 10px; font-family: monospace; font-size:12px;">${item.id}</td>
+          <td style="padding: 10px;"><strong>${item.title}</strong><br><small style="color:#666">By: ${item.organizationName}</small></td>
+          <td style="padding: 10px;"><span style="background:#fef9e7; color:#b7950b; padding:2px 6px; border-radius:4px; font-size:12px;">${item.type}</span></td>
+          <td style="padding: 10px;">
+            <form action="/admin/delete/inv/${item.id}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this opportunity?');">
+              <button style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
+            </form>
+          </td>
+        </tr>`;
+    });
+  }
+
+  // --- MAIN ADMIN HTML VIEW ---
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Y4Y Directory Admin</title>
+        <title>Y4Y Central Command</title>
     </head>
-    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 40px;">
+    <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 30px;">
         <div style="max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #2c3e50;">👑 Y4Y Global Directory — Master Administration</h2>
-                <span style="background: #2c3e50; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">Logged in as Super Admin</span>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 30px;">
+                <h2 style="margin: 0; color: #2c3e50;">👑 Y4Y Platform — Global Control Center</h2>
+                <span style="background: #dc3545; color: white; padding: 6px 14px; border-radius: 20px; font-weight:bold; font-size: 13px;">Super Admin Connected</span>
             </div>
-            
-            <p style="color: #666; margin-bottom: 30px;">Moderate entries, remove fake submissions instantly, or execute standard 24-hour verification compliance rules.</p>
-            
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+
+            <h3 style="color: #2c3e50; border-left: 4px solid #007bff; padding-left: 10px;">📁 1. Directory Registries (${organizations.length})</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 40px; font-size: 14px;">
                 <thead>
                     <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
-                        <th style="padding: 12px;">ID</th>
-                        <th style="padding: 12px;">Organization & Contact</th>
-                        <th style="padding: 12px;">WHO Region / Country</th>
-                        <th style="padding: 12px;">Verification Status</th>
-                        <th style="padding: 12px;">Administrative Actions</th>
+                        <th style="padding: 10px; width: 10%;">ID</th>
+                        <th style="padding: 10px; width: 40%;">Organization</th>
+                        <th style="padding: 10px; width: 20%;">WHO Region</th>
+                        <th style="padding: 10px; width: 15%;">Verification Status</th>
+                        <th style="padding: 10px; width: 15%;">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    ${tableRows}
-                </tbody>
+                <tbody>${orgRows}</tbody>
             </table>
+
+            <h3 style="color: #2c3e50; border-left: 4px solid #28a745; padding-left: 10px;">🤝 2. Active Collaboration Proposals (${collaborations.length})</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 40px; font-size: 14px;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; width: 15%;">ID</th>
+                        <th style="padding: 10px; width: 50%;">Project Title & Submitter</th>
+                        <th style="padding: 10px; width: 20%;">Collaboration Type</th>
+                        <th style="padding: 10px; width: 15%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>${collabRows}</tbody>
+            </table>
+
+            <h3 style="color: #2c3e50; border-left: 4px solid #ffc107; padding-left: 10px;">💡 3. Opportunity Hub Posts (${invitations.length})</h3>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; width: 15%;">ID</th>
+                        <th style="padding: 10px; width: 50%;">Opportunity Title</th>
+                        <th style="padding: 10px; width: 20%;">Listing Type</th>
+                        <th style="padding: 10px; width: 15%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>${invRows}</tbody>
+            </table>
+
         </div>
     </body>
     </html>
   `);
 });
 
-// Action Route: Execute Database Verification
-app.post('/admin/verify/:id', async (req, res) => {
-  const password = req.query.secret;
-  if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
-  
+// ---------------------------------------------------------------------------
+// Action Handlers
+// ---------------------------------------------------------------------------
+
+// Verify an Organization
+app.post('/admin/verify/org/:id', async (req, res) => {
+  if (req.query.secret !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
   const db = readDb();
   const org = db.organizations.find((o) => o.id === req.params.id);
-  
-  if (org) {
-    org.verified = true;
-    await writeDb(db);
-  }
-  res.redirect(`/admin-panel?secret=${password}`);
+  if (org) { org.verified = true; await writeDb(db); }
+  res.redirect(`/admin-panel?secret=${req.query.secret}`);
 });
 
-// Action Route: Delete Registry Submissions permanently from DB file
-app.post('/admin/delete/:id', async (req, res) => {
-  const password = req.query.secret;
-  if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
-  
+// Delete an Organization
+app.post('/admin/delete/org/:id', async (req, res) => {
+  if (req.query.secret !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
   const db = readDb();
-  const initialLength = db.organizations.length;
-  
-  // Filter out the item to delete it
   db.organizations = db.organizations.filter((o) => o.id !== req.params.id);
-  
-  if (db.organizations.length !== initialLength) {
-    await writeDb(db);
-  }
-  res.redirect(`/admin-panel?secret=${password}`);
+  await writeDb(db);
+  res.redirect(`/admin-panel?secret=${req.query.secret}`);
+});
+
+// Delete a Collaboration Post
+app.post('/admin/delete/collab/:id', async (req, res) => {
+  if (req.query.secret !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+  const db = readDb();
+  db.collaborations = db.collaborations.filter((c) => c.id !== req.params.id);
+  await writeDb(db);
+  res.redirect(`/admin-panel?secret=${req.query.secret}`);
+});
+
+// Delete an Opportunity (Invitation) Post
+app.post('/admin/delete/inv/:id', async (req, res) => {
+  if (req.query.secret !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+  const db = readDb();
+  db.invitations = db.invitations.filter((i) => i.id !== req.params.id);
+  await writeDb(db);
+  res.redirect(`/admin-panel?secret=${req.query.secret}`);
 });
 // ---------------------------------------------------------------------------
 // Invitations / Opportunities
