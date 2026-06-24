@@ -5,7 +5,11 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { readDb, writeDb } = require("./db");
-const WHO_REGIONS = require("./public/js/regions-data.js");
+
+. **Move the data file:** If `server.js` absolutely *needs* to read this data on the backend, move the `regions-data.js` file out of the `public` folder and put it right in your main root folder (next to `server.js`).
+4. Change line 8 in `server.js` to point to the new location:
+   ```javascript
+   const regionsData = require('./regions-data.js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
