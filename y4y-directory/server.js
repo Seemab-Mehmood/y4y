@@ -219,108 +219,127 @@ app.post("/api/collaborations/:id/interest", async (req, res) => {
   res.json(collab);
 });
 
-// Secure Admin Dashboard Route
-app.get('/admin-panel', (req, res) => {
-    const password = req.query.secret;
-    const correctPassword = process.env.ADMIN_PASSWORD;
+// ---------------------------------------------------------------------------
+// 👑 Super Admin Dashboard Panel
+// ---------------------------------------------------------------------------
 
-    if (!correctPassword || password !== correctPassword) {
-        return res.status(403).send('<h1>Access Denied: Invalid Secret Key.</h1>');
-    }
+app.get('/admin-panel', async (req, res) => {
+  const password = req.query.secret;
+  const correctPassword = process.env.ADMIN_PASSWORD;
 
-    // NOTE: Replace 'regionsData' below with whatever your actual data variable array is named in server.js!
-    // If your submissions are saved in an array or a file, we read them here.
-    const submissions = typeof regionsData !== 'undefined' ? regionsData : []; 
+  if (!correctPassword || password !== correctPassword) {
+    return res.status(403).send('<h1>Access Denied: Invalid Secret Key.</h1>');
+  }
 
-    let tableRows = '';
-    
-    // Check if there are any listings to manage
-    if (submissions.length === 0) {
-        tableRows = `<tr><td colspan="5" style="text-align:center; padding:20px;">No directory registries found.</td></tr>`;
-    } else {
-        submissions.forEach((item, index) => {
-            // Assume items have an id, name, region, and status. Fall back if undefined.
-            const name = item.name || item.organization || 'Unnamed Entry';
-            const region = item.region || 'Global';
-            const status = item.verified ? '✅ Verified' : '⏳ Pending 24h Verification';
-            
-            tableRows += `
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 12px;">${index + 1}</td>
-                    <td style="padding: 12px;"><strong>${name}</strong></td>
-                    <td style="padding: 12px;"><span style="background:#eef; padding:4px 8px; border-radius:4px;">${region}</span></td>
-                    <td style="padding: 12px;">${status}</td>
-                    <td style="padding: 12px;">
-                        <form action="/admin/verify/${index}?secret=${password}" method="POST" style="display:inline;">
-                            <button style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right:5px;">Verify</button>
-                        </form>
-                        <form action="/admin/delete/${index}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to permanently delete this submission?');">
-                            <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            `;
-        });
-    }
+  // Read live data using your built-in db helper
+  const db = readDb();
+  const submissions = db.organizations || [];
 
-    // Send down the functional Admin UI
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Y4Y Directory Admin</title>
-        </head>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 40px;">
-            <div style="max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #2c3e50;">👑 Y4Y Global Directory — Master Administration</h2>
-                    <span style="background: #2c3e50; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">Logged in as Super Admin</span>
-                </div>
-                
-                <p style="color: #666; margin-bottom: 30px;">Use this control panel to moderate new directory submissions, remove registrations instantly, or execute standard 24-hour verification compliance.</p>
-                
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
-                            <th style="padding: 12px;">#</th>
-                            <th style="padding: 12px;">Organization Name</th>
-                            <th style="padding: 12px;">WHO Region / Country</th>
-                            <th style="padding: 12px;">Verification Window Status</th>
-                            <th style="padding: 12px;">Administrative Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
+  let tableRows = '';
+  
+  if (submissions.length === 0) {
+    tableRows = `<tr><td colspan="5" style="text-align:center; padding:20px;">No directory registries found.</td></tr>`;
+  } else {
+    submissions.forEach((item) => {
+      const name = item.name || 'Unnamed Entry';
+      const region = item.regionName || item.region || 'Global';
+      const country = item.countryName || 'Unknown Country';
+      const status = item.verified 
+        ? '<span style="color: #28a745; font-weight: bold;">✅ Verified</span>' 
+        : '<span style="color: #fd7e14; font-weight: bold;">⏳ Pending 24h Verification</span>';
+      
+      tableRows += `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 12px; font-family: monospace;">${item.id}</td>
+          <td style="padding: 12px;">
+            <strong>${name}</strong><br>
+            <small style="color:#666">${item.email}</small>
+          </td>
+          <td style="padding: 12px;">
+            <span style="background:#eef; padding:4px 8px; border-radius:4px; font-size:12px;">${region}</span><br>
+            <small>${country}</small>
+          </td>
+          <td style="padding: 12px;">${status}</td>
+          <td style="padding: 12px;">
+            ${!item.verified ? `
+            <form action="/admin/verify/${item.id}?secret=${password}" method="POST" style="display:inline;">
+              <button style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right:5px;">Verify App entry</button>
+            </form>
+            ` : ''}
+            <form action="/admin/delete/${item.id}?secret=${password}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to permanently delete this submission?');">
+              <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+            </form>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Y4Y Directory Admin</title>
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 40px;">
+        <div style="max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 20px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #2c3e50;">👑 Y4Y Global Directory — Master Administration</h2>
+                <span style="background: #2c3e50; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">Logged in as Super Admin</span>
             </div>
-        </body>
-        </html>
-    `);
+            
+            <p style="color: #666; margin-bottom: 30px;">Moderate entries, remove fake submissions instantly, or execute standard 24-hour verification compliance rules.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 12px;">ID</th>
+                        <th style="padding: 12px;">Organization & Contact</th>
+                        <th style="padding: 12px;">WHO Region / Country</th>
+                        <th style="padding: 12px;">Verification Status</th>
+                        <th style="padding: 12px;">Administrative Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+  `);
 });
 
-// Action Route: Execute Verification
-app.post('/admin/verify/:id', (req, res) => {
-    const password = req.query.secret;
-    if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
-    
-    const id = parseInt(req.params.id);
-    if (typeof regionsData !== 'undefined' && regionsData[id]) {
-        regionsData[id].verified = true; // Flips status to verified
-    }
-    res.redirect(`/admin-panel?secret=${password}`);
+// Action Route: Execute Database Verification
+app.post('/admin/verify/:id', async (req, res) => {
+  const password = req.query.secret;
+  if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+  
+  const db = readDb();
+  const org = db.organizations.find((o) => o.id === req.params.id);
+  
+  if (org) {
+    org.verified = true;
+    await writeDb(db);
+  }
+  res.redirect(`/admin-panel?secret=${password}`);
 });
 
-// Action Route: Delete Submissions/Registry Entries
-app.post('/admin/delete/:id', (req, res) => {
-    const password = req.query.secret;
-    if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
-    
-    const id = parseInt(req.params.id);
-    if (typeof regionsData !== 'undefined' && regionsData[id]) {
-        regionsData.splice(id, 1); // Permanently removes the entry from memory array
-    }
-    res.redirect(`/admin-panel?secret=${password}`);
+// Action Route: Delete Registry Submissions permanently from DB file
+app.post('/admin/delete/:id', async (req, res) => {
+  const password = req.query.secret;
+  if (password !== process.env.ADMIN_PASSWORD) return res.status(403).send('Unauthorized');
+  
+  const db = readDb();
+  const initialLength = db.organizations.length;
+  
+  // Filter out the item to delete it
+  db.organizations = db.organizations.filter((o) => o.id !== req.params.id);
+  
+  if (db.organizations.length !== initialLength) {
+    await writeDb(db);
+  }
+  res.redirect(`/admin-panel?secret=${password}`);
 });
 // ---------------------------------------------------------------------------
 // Invitations / Opportunities
