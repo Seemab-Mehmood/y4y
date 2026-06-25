@@ -507,7 +507,7 @@ async function handleOrgSubmit(event) {
     }
 }
 
-// Validates token locally on match, updates static array parameters, clears memory caches
+// Validates token locally on match, handles visual transitions, updates registry data systems
 async function verifyOtpAndSubmitOrg() {
     const otpInput = document.getElementById("verificationOtpInput");
     const userEnteredOtp = otpInput ? otpInput.value.trim() : "";
@@ -532,37 +532,55 @@ async function verifyOtpAndSubmitOrg() {
                 body: JSON.stringify(pendingOrgPayload) 
             });
 
-            // Close down form models and overlays
-            closeModal("emailVerificationModal");
-            closeModal("registerOrgModal");
-            
-            // Clear temporary tracking profiles state map variables
-            pendingOrgPayload = null;
-            generatedOtpCode = null;
-            otpExpirationTime = null;
+            // 1. INJECT NAME FIRST while the payload variable is still alive and full of data
+            const targetSuccessLabel = document.getElementById("successOrgName");
+            if (targetSuccessLabel && pendingOrgPayload) {
+                targetSuccessLabel.textContent = pendingOrgPayload.name;
+            }
 
-            const form = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
-            if (form) form.reset();
+            // 2. TOGGLE VIEWS TO CELEBRATION MODE (Keep modals open to show the beautiful prompt)
+            document.getElementById("otpInputView").style.display = "none";
+            const successView = document.getElementById("otpSuccessView");
+            if (successView) {
+                successView.classList.add("active-view");
+            }
 
-            // Refresh UI grids and layout counters
-            loadStats();
-            loadRecentOrgs();
-            if (state.view === "directory") loadOrgsList();
-            refreshTotalCount();
-            
-            // Inside your app.js when OTP validation succeeds:
-if (userEnteredOtp === generatedOtpCode || userEnteredOtp === "123456") {
-    
-    // Grab the name from your payload and inject it cleanly into the HTML text string
-    const targetSuccessLabel = document.getElementById("successOrgName");
-    if (targetSuccessLabel && pendingOrgPayload) {
-        targetSuccessLabel.textContent = pendingOrgPayload.name;
+        } catch (err) {
+            console.error("Submission Error:", err);
+            showToast(err.message || "Failed to commit organization creation rules.", "error");
+        }
+    } else {
+        showToast("Incorrect security verification code. Please check and try again.", "error");
     }
-
-    // Toggle views
-    document.getElementById("otpInputView").style.display = "none";
-    document.getElementById("otpSuccessView").classList.add("active-view");
 }
+
+// 4. CLEANLY CLOSE WORKSPACE AFTER VISUAL PROMPT IS READ
+function finalizeIconicWorkflowClose() {
+    // Close down the container modals cleanly
+    closeModal("emailVerificationModal");
+    closeModal("registerOrgModal");
+    
+    // Clear temporary state variable caches safely now that the workflow is finished
+    pendingOrgPayload = null;
+    generatedOtpCode = null;
+    otpExpirationTime = null;
+
+    const form = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
+    if (form) form.reset();
+
+    // Reset layout elements back to default structure for the next visitor
+    setTimeout(() => {
+        document.getElementById("otpInputView").style.display = "block";
+        const successView = document.getElementById("otpSuccessView");
+        if (successView) successView.classList.remove("active-view");
+        if (otpInput) otpInput.value = "";
+    }, 500);
+
+    // Refresh UI grids and layout counters globally
+    loadStats();
+    loadRecentOrgs();
+    if (typeof state !== 'undefined' && state.view === "directory") loadOrgsList();
+    if (typeof refreshTotalCount === 'function') refreshTotalCount();
 }
 // ---------------------------------------------------------------------------
 // Org card / list rendering helpers
