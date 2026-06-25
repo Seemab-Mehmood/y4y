@@ -78,6 +78,10 @@ function switchView(view) {
   }
 }
 
+function toggleMobileNav() {
+  document.getElementById("mobileNav").classList.toggle("open");
+}
+
 // ---------------------------------------------------------------------------
 // Modals
 // ---------------------------------------------------------------------------
@@ -503,7 +507,7 @@ async function handleOrgSubmit(event) {
     }
 }
 
-// Validates token locally on match, handles visual transitions, updates registry data systems
+// Validates token locally on match, updates static array parameters, clears memory caches
 async function verifyOtpAndSubmitOrg() {
     const otpInput = document.getElementById("verificationOtpInput");
     const userEnteredOtp = otpInput ? otpInput.value.trim() : "";
@@ -528,68 +532,32 @@ async function verifyOtpAndSubmitOrg() {
                 body: JSON.stringify(pendingOrgPayload) 
             });
 
-            // 1. INJECT NAME FIRST while the payload variable is still alive and full of data
-            const targetSuccessLabel = document.getElementById("successOrgName");
-            if (targetSuccessLabel && pendingOrgPayload) {
-                targetSuccessLabel.textContent = pendingOrgPayload.name;
-            }
+            // Close down form models and overlays
+            closeModal("emailVerificationModal");
+            closeModal("registerOrgModal");
+            
+            // Clear temporary tracking profiles state map variables
+            pendingOrgPayload = null;
+            generatedOtpCode = null;
+            otpExpirationTime = null;
 
-            // 2. TOGGLE VIEWS TO CELEBRATION MODE (Keep modals open to show the beautiful prompt)
-            document.getElementById("otpInputView").style.display = "none";
-            const successView = document.getElementById("otpSuccessView");
-            if (successView) {
-                successView.classList.add("active-view");
-            }
+            const form = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
+            if (form) form.reset();
 
+            // Refresh UI grids and layout counters
+            loadStats();
+            loadRecentOrgs();
+            if (state.view === "directory") loadOrgsList();
+            refreshTotalCount();
+            
+            // Step 4: Display review period confirmation layout notice
+            alert("Success! The Y4Y team will review your submitted application within 24 hours and will notify via email about your successful directory registration.");
         } catch (err) {
-            console.error("Submission Error:", err);
             showToast(err.message || "Failed to commit organization creation rules.", "error");
         }
     } else {
         showToast("Incorrect security verification code. Please check and try again.", "error");
     }
-}
-
-// 4. CLEANLY CLOSE WORKSPACE AFTER VISUAL PROMPT IS READ
-function finalizeIconicWorkflowClose() {
-    // Close down the container modals cleanly
-    closeModal("emailVerificationModal");
-    closeModal("registerOrgModal");
-    
-    // Clear temporary state variable caches safely now that the workflow is finished
-    pendingOrgPayload = null;
-    generatedOtpCode = null;
-    otpExpirationTime = null;
-
-    const form = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
-    if (form) form.reset();
-
-    // Reset layout elements back to default structure for the next visitor
-    setTimeout(() => {
-        document.getElementById("otpInputView").style.display = "block";
-        const successView = document.getElementById("otpSuccessView");
-        if (successView) successView.classList.remove("active-view");
-        if (otpInput) otpInput.value = "";
-    }, 500);
-
-    // Refresh UI grids and layout counters globally
-    loadStats();
-    loadRecentOrgs();
-    if (typeof state !== 'undefined' && state.view === "directory") loadOrgsList();
-    if (typeof refreshTotalCount === 'function') refreshTotalCount();
-}
-
-function openModal(id) {
-  // If an anchor click event triggered this, prevent page snapping
-  if (window.event) {
-    window.event.preventDefault();
-  }
-  
-  const modal = document.getElementById(id);
-  if (modal) {
-    modal.classList.add("open");
-    document.body.style.overflow = "hidden"; // Disables background page scrolling
-  }
 }
 // ---------------------------------------------------------------------------
 // Org card / list rendering helpers
