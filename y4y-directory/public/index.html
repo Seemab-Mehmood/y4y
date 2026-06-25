@@ -539,14 +539,16 @@
             <input type="number" name="foundedYear" class="form-input" placeholder="e.g. 2015" min="1900" max="2025">
           </div>
 
-          <label for="orgScale">Scale of Impact *</label>
-          <select id="orgScale" required class="form-control">
-           <option value="">-- Select Scale --</option>
-           <option value="International">International</option>
-           <option value="Regional">Regional</option>
-           <option value="National">National</option>
-           <option value="University/local level">University / Local Level</option>
-          </select>
+         <div class="form-group">
+            <label>Scale of Impact *</label>
+            <select name="scale" class="form-select" id="orgScaleSelect" required>
+            <option value="">Select scale of impact</option>
+            <option value="International">International</option>
+            <option value="Regional">Regional</option>
+            <option value="National">National</option>
+            <option value="University/local level">University/local level</option>
+            </select>
+        </div>
 
           <div class="form-group">
             <label>Website</label>
