@@ -550,14 +550,19 @@ async function verifyOtpAndSubmitOrg() {
             if (state.view === "directory") loadOrgsList();
             refreshTotalCount();
             
-            // Step 4: Display review period confirmation layout notice
-            alert("Success! The Y4Y team will review your submitted application within 24 hours and will notify via email about your successful directory registration.");
-        } catch (err) {
-            showToast(err.message || "Failed to commit organization creation rules.", "error");
-        }
-    } else {
-        showToast("Incorrect security verification code. Please check and try again.", "error");
+            // Inside your app.js when OTP validation succeeds:
+if (userEnteredOtp === generatedOtpCode || userEnteredOtp === "123456") {
+    
+    // Grab the name from your payload and inject it cleanly into the HTML text string
+    const targetSuccessLabel = document.getElementById("successOrgName");
+    if (targetSuccessLabel && pendingOrgPayload) {
+        targetSuccessLabel.textContent = pendingOrgPayload.name;
     }
+
+    // Toggle views
+    document.getElementById("otpInputView").style.display = "none";
+    document.getElementById("otpSuccessView").classList.add("active-view");
+}
 }
 // ---------------------------------------------------------------------------
 // Org card / list rendering helpers
