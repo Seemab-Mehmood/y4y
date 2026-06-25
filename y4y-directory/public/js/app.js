@@ -4,6 +4,13 @@
 
 const API = ""; // same-origin; change to e.g. "http://localhost:3000" if served separately
 
+window.addEventListener("load", () => {
+    const loader = document.getElementById("y4y-global-loader");
+    if(loader) {
+        loader.style.opacity = "0";
+        setTimeout(() => loader.remove(), 400);
+    }
+});
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
