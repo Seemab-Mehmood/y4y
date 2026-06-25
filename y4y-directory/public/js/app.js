@@ -79,32 +79,6 @@ function switchView(view) {
 }
 
 // ---------------------------------------------------------------------------
-// Modals (Updated with Footer Visibility Patch)
-// ---------------------------------------------------------------------------
-
-function openModal(id) {
-  document.getElementById(id).classList.add("open");
-  document.body.style.overflow = "hidden";
-  
-  // Cleanly selects the exact unique ID wrapper and hides it instantly
-  const globalFooter = document.getElementById("y4y-global-footer");
-  if (globalFooter) {
-    globalFooter.style.setProperty("display", "none", "important");
-  }
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove("open");
-  document.body.style.overflow = "";
-  
-  // Safely restores layout parameters once closed
-  const globalFooter = document.getElementById("y4y-global-footer");
-  if (globalFooter) {
-    globalFooter.style.display = ""; 
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Modals
 // ---------------------------------------------------------------------------
 
@@ -603,6 +577,19 @@ function finalizeIconicWorkflowClose() {
     loadRecentOrgs();
     if (typeof state !== 'undefined' && state.view === "directory") loadOrgsList();
     if (typeof refreshTotalCount === 'function') refreshTotalCount();
+}
+
+function openModal(id) {
+  // If an anchor click event triggered this, prevent page snapping
+  if (window.event) {
+    window.event.preventDefault();
+  }
+  
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden"; // Disables background page scrolling
+  }
 }
 // ---------------------------------------------------------------------------
 // Org card / list rendering helpers
