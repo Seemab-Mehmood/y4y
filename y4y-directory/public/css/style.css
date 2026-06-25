@@ -3,6 +3,34 @@
    Design: Bold, purposeful, globally alive
    Signature: Animated gradient rings in hero
 ============================================ */
+/* Y4Y Custom Branding Loader Overlay */
+#y4y-global-loader {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #ffffff;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 99999;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.y4y-loader-logo {
+    font-size: 42px; font-weight: 800; color: #5B6EF5;
+    margin-bottom: 20px; letter-spacing: -1px;
+    animation: pulseY4Y 1.8s infinite ease-in-out;
+}
+.y4y-spinner-ring {
+    width: 50px; height: 50px;
+    border: 4px solid #f3f3f3; border-top: 4px solid #5B6EF5;
+    border-radius: 50%;
+    animation: spinY4Y 1s linear infinite;
+}
+@keyframes pulseY4Y {
+    0%, 100% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+@keyframes spinY4Y {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
 :root {
   --ink: #0D0F1A;
