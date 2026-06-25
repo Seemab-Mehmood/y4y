@@ -86,8 +86,8 @@ function openModal(id) {
   document.getElementById(id).classList.add("open");
   document.body.style.overflow = "hidden";
   
-  // Hide the footer to stop it from popping up along with the form
-  const globalFooter = document.querySelector("footer") || document.getElementById("mobileNav"); 
+  // Cleanly selects the exact unique ID wrapper and hides it instantly
+  const globalFooter = document.getElementById("y4y-global-footer");
   if (globalFooter) {
     globalFooter.style.setProperty("display", "none", "important");
   }
@@ -97,15 +97,11 @@ function closeModal(id) {
   document.getElementById(id).classList.remove("open");
   document.body.style.overflow = "";
   
-  // Bring the footer back safely when the form closes
-  const globalFooter = document.querySelector("footer") || document.getElementById("mobileNav");
+  // Safely restores layout parameters once closed
+  const globalFooter = document.getElementById("y4y-global-footer");
   if (globalFooter) {
-    globalFooter.style.display = ""; // Restores original layout view rules
+    globalFooter.style.display = ""; 
   }
-}
-
-function toggleMobileNav() {
-  document.getElementById("mobileNav").classList.toggle("open");
 }
 
 // ---------------------------------------------------------------------------
