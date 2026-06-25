@@ -417,44 +417,126 @@ function refreshTotalCount() {
     .catch(() => {});
 }
 
+// ===========================================================================
+// Verification Flow & State Management Updates
+// ===========================================================================
+
+// Global tracking pointer to store form payload securely while waiting for OTP code input
+let pendingOrgPayload = null;
+
+// Replace your original DOMContentLoaded setup to explicitly bind our new form submission handler
+document.addEventListener("DOMContentLoaded", () => {
+  buildRegionsGrid();
+  populateRegionFilter();
+  populateOrgRegionSelect();
+  loadStats();
+  loadRecentOrgs();
+  loadHomeCollabs();
+  wireNavLinks();
+  
+  // Explicitly hijack the registration submission to loop in our verification flow
+  const orgForm = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
+  if (orgForm) {
+    orgForm.removeAttribute("onsubmit"); // Erase previous inline attribute bindings if present
+    orgForm.addEventListener("submit", handleOrgSubmit);
+  }
+});
+
+// Intercepts the original application form, saves draft state, and prompts OTP dispatch
 async function handleOrgSubmit(event) {
     event.preventDefault();
-    const email = document.getElementById("orgEmail").value;
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Extract multi-checkbox items safely
+    const focusAreas = Array.from(form.querySelectorAll('#focusAreasGrid input:checked')).map((i) => i.value);
+    const email = formData.get("email");
 
-    // Step 1: Request OTP verification code from backend
+    if (!email) {
+        showToast("Please provide a valid structural email contact address.", "error");
+        return;
+    }
+
+    // Build standard workspace payload object
+    pendingOrgPayload = {
+        name: formData.get("name"),
+        description: formData.get("description"),
+        category: formData.get("category"),
+        region: formData.get("region"),
+        countryCode: formData.get("countryCode"),
+        province: formData.get("province"),
+        city: formData.get("city"),
+        foundedYear: formData.get("foundedYear"),
+        website: formData.get("website"),
+        email: email,
+        phone: formData.get("phone"),
+        contactPerson: formData.get("contactPerson"),
+        focusAreas,
+        tags: formData.get("tags"),
+        scale: formData.get("scale"), // Dynamic Scale of Impact selector integration
+        logoUrl: formData.get("logoUrl")
+    };
+
     try {
-        const res = await apiFetch("/api/auth/send-verification-otp", {
+        // Step 1: Send request to server to generate and mail verification token
+        await apiFetch("/api/auth/send-verification-otp", {
             method: "POST",
             body: JSON.stringify({ email })
         });
         
-        // Show OTP code input modal overlay
+        // Trigger structural input popup interface window
         openModal("emailVerificationModal");
+        showToast("A security verification code has been dispatched to your email address.", "success");
     } catch(err) {
-        showToast("Error processing verification dispatch.", "error");
+        showToast(err.message || "Error processing verification dispatch.", "error");
     }
 }
 
+// Submits input code to server. On match, updates data collections and clears workspace state cache
 async function verifyOtpAndSubmitOrg() {
-    const otp = document.getElementById("verificationOtpInput").value;
-    const email = document.getElementById("orgEmail").value;
+    const otpInput = document.getElementById("verificationOtpInput");
+    const otp = otpInput ? otpInput.value.trim() : "";
+    const email = pendingOrgPayload ? pendingOrgPayload.email : "";
+
+    if (!otp) {
+        showToast("Please enter the verification code.", "error");
+        return;
+    }
 
     try {
+        // Step 2: Validate token matches database cache values
         const verifyRes = await apiFetch("/api/auth/verify-otp", {
             method: "POST",
             body: JSON.stringify({ email, otp })
         });
 
         if (verifyRes.success) {
-            // Step 2: Code matches. Submit full application metadata to DB
-            await saveOrganizationDraft();
+            // Step 3: Token checks out. Append registry request to the backend with verified: false state
+            await apiFetch("/api/organizations", { 
+                method: "POST", 
+                body: JSON.stringify(pendingOrgPayload) 
+            });
+
+            // Close down form models and overlays
             closeModal("emailVerificationModal");
+            closeModal("registerOrgModal");
             
-            // Step 3: Prompt structural application lifecycle notice
+            // Clear temporary caching state
+            pendingOrgPayload = null;
+            const form = document.getElementById("registerOrgForm") || document.querySelector("#registerOrgModal form");
+            if (form) form.reset();
+
+            // Refresh UI grids and layout counters
+            loadStats();
+            loadRecentOrgs();
+            if (state.view === "directory") loadOrgsList();
+            refreshTotalCount();
+            
+            // Step 4: Show review period notice to the representative
             alert("Success! The Y4Y team will review your submitted application within 24 hours and will notify via email about your successful directory registration.");
         }
     } catch(err) {
-        showToast("Invalid verification code. Please retry.", "error");
+        showToast(err.message || "Invalid verification code. Please retry.", "error");
     }
 }
 
