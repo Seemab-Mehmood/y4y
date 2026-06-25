@@ -78,6 +78,32 @@ function switchView(view) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Modals (Updated with Footer Visibility Patch)
+// ---------------------------------------------------------------------------
+
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+  document.body.style.overflow = "hidden";
+  
+  // Hide the footer to stop it from popping up along with the form
+  const globalFooter = document.querySelector("footer") || document.getElementById("mobileNav"); 
+  if (globalFooter) {
+    globalFooter.style.setProperty("display", "none", "important");
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+  document.body.style.overflow = "";
+  
+  // Bring the footer back safely when the form closes
+  const globalFooter = document.querySelector("footer") || document.getElementById("mobileNav");
+  if (globalFooter) {
+    globalFooter.style.display = ""; // Restores original layout view rules
+  }
+}
+
 function toggleMobileNav() {
   document.getElementById("mobileNav").classList.toggle("open");
 }
