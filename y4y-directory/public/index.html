@@ -613,21 +613,39 @@
       </form>
     </div>
   </div>
-</div>
+<div id="emailVerificationModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'emailVerificationModal')">
+  <div class="modal-window small-modal" style="max-width: 420px; padding: 35px; border-radius: 16px; background: #ffffff; text-align: center; box-shadow: 0 20px 40px rgba(13, 15, 26, 0.15);">
+    
+    <div id="otpInputView">
+      <div style="font-size: 40px; margin-bottom: 15px;">🛡️</div>
+      <h3 style="margin-top: 0; color: #0D0F1A; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px;">Verify Your Email</h3>
+      <p style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">We have sent a 6-digit confirmation code to your provided organization email address. Please type it below to proceed.</p>
+      
+      <div class="form-group" style="margin-bottom: 20px;">
+        <input type="text" id="verificationOtpInput" class="otp-large-input" placeholder="000000" maxlength="6" autocomplete="off" style="text-align: center; font-size: 24px; letter-spacing: 6px; font-weight: bold; width: 100%; box-sizing: border-box; padding: 10px; background: #F0F4FF; border: 2px solid #5B6EF5; border-radius: 8px;">
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn-ghost" onclick="closeModal('emailVerificationModal')" style="padding: 10px 15px;">Cancel</button>
+        <button type="button" class="btn-primary" onclick="verifyOtpAndSubmitOrg()" style="padding: 10px 20px; background: #5B6EF5; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Verify & Submit Application</button>
+      </div>
+    </div>
 
-  <div id="emailVerificationModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'emailVerificationModal')">
-  <div class="modal-window small-modal" style="max-width: 400px; padding: 25px; border-radius: 12px; background: #fff; text-align: center;">
-    <h3 style="margin-top: 0; color: #0D0F1A;">Verify Your Email</h3>
-    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">We have sent a 6-digit confirmation code to your provided organization email address. Please type it below to proceed.</p>
-    
-    <div class="form-group" style="margin-bottom: 20px;">
-      <input type="text" id="verificationOtpInput" class="form-select" placeholder="Enter 6-Digit Code" style="text-align: center; font-size: 18px; letter-spacing: 4px; font-weight: bold;" maxlength="6" required />
+    <div id="otpSuccessView" class="hidden-view">
+      <div class="success-icon-wrapper">
+        <div class="success-checkmark-circle"></div>
+      </div>
+      <h2 class="success-title-pulse">Congratulations!</h2>
+      <hr class="divider-glow">
+      <p class="success-message-text" style="font-size: 16px; font-weight: 500; color: #0D0F1A; margin-bottom: 8px;">
+        Your code is correct!
+      </p>
+      <p class="success-message-text" style="font-size: 15px; color: #4A5568; line-height: 1.6;">
+        <strong id="successOrgName" style="color: #5B6EF5; font-size: 17px;">[Organization Name]</strong> has been added into the Y4Y Organizations Directory successfully.
+      </p>
+      <button class="btn-success-close" onclick="finalizeIconicWorkflowClose()">Enter Workspace</button>
     </div>
-    
-    <div style="display: flex; gap: 10px; justify-content: center;">
-      <button type="button" class="btn-ghost" onclick="closeModal('emailVerificationModal')" style="padding: 10px 15px;">Cancel</button>
-      <button type="button" class="btn-primary" onclick="verifyOtpAndSubmitOrg()" style="padding: 10px 20px; background: #5B6EF5; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Verify & Submit Application</button>
-    </div>
+
   </div>
 </div>
   
