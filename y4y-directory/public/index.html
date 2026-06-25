@@ -607,6 +607,23 @@
   </div>
 </div>
 
+  <div id="emailVerificationModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'emailVerificationModal')">
+  <div class="modal-window small-modal" style="max-width: 400px; padding: 25px; border-radius: 12px; background: #fff; text-align: center;">
+    <h3 style="margin-top: 0; color: #0D0F1A;">Verify Your Email</h3>
+    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">We have sent a 6-digit confirmation code to your provided organization email address. Please type it below to proceed.</p>
+    
+    <div class="form-group" style="margin-bottom: 20px;">
+      <input type="text" id="verificationOtpInput" class="form-select" placeholder="Enter 6-Digit Code" style="text-align: center; font-size: 18px; letter-spacing: 4px; font-weight: bold;" maxlength="6" required />
+    </div>
+    
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button type="button" class="btn-ghost" onclick="closeModal('emailVerificationModal')" style="padding: 10px 15px;">Cancel</button>
+      <button type="button" class="btn-primary" onclick="verifyOtpAndSubmitOrg()" style="padding: 10px 20px; background: #5B6EF5; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Verify & Submit Application</button>
+    </div>
+  </div>
+</div>
+  
+
 <!-- Create Collaboration Modal -->
 <div class="modal-overlay" id="createCollabModal" onclick="closeModalOnOverlay(event, 'createCollabModal')">
   <div class="modal">
