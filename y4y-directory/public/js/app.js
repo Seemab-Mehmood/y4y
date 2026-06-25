@@ -417,6 +417,47 @@ function refreshTotalCount() {
     .catch(() => {});
 }
 
+async function handleOrgSubmit(event) {
+    event.preventDefault();
+    const email = document.getElementById("orgEmail").value;
+
+    // Step 1: Request OTP verification code from backend
+    try {
+        const res = await apiFetch("/api/auth/send-verification-otp", {
+            method: "POST",
+            body: JSON.stringify({ email })
+        });
+        
+        // Show OTP code input modal overlay
+        openModal("emailVerificationModal");
+    } catch(err) {
+        showToast("Error processing verification dispatch.", "error");
+    }
+}
+
+async function verifyOtpAndSubmitOrg() {
+    const otp = document.getElementById("verificationOtpInput").value;
+    const email = document.getElementById("orgEmail").value;
+
+    try {
+        const verifyRes = await apiFetch("/api/auth/verify-otp", {
+            method: "POST",
+            body: JSON.stringify({ email, otp })
+        });
+
+        if (verifyRes.success) {
+            // Step 2: Code matches. Submit full application metadata to DB
+            await saveOrganizationDraft();
+            closeModal("emailVerificationModal");
+            
+            // Step 3: Prompt structural application lifecycle notice
+            alert("Success! The Y4Y team will review your submitted application within 24 hours and will notify via email about your successful directory registration.");
+        }
+    } catch(err) {
+        showToast("Invalid verification code. Please retry.", "error");
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Org card / list rendering helpers
 // ---------------------------------------------------------------------------
