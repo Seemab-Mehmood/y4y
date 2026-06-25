@@ -15,8 +15,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers & State Verification Caches
 // ---------------------------------------------------------------------------
+
+// 🆕 ADDED: Memory cache mapping for temporary verification states
+const verificationCache = new Map();
 
 function findCountry(countryCode) {
   for (const regionKey of Object.keys(WHO_REGIONS)) {
@@ -50,12 +53,61 @@ app.get("/api/regions/:regionCode/countries", (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// 🆕 ADDED: Authentication & Security Tokens (OTP Flow)
+// ---------------------------------------------------------------------------
+
+app.post("/api/auth/send-verification-otp", (req, res) => {
+  const { email } = req.body;
+  if (!email) return badRequest(res, "Email address is required.");
+
+  // Generate an arbitrary 6-digit verification code string
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  
+  // Cache data entry with a 10-minute automated expiry clock
+  verificationCache.set(email.toLowerCase().trim(), {
+    otp: otp,
+    expiresAt: Date.now() + 10 * 60 * 1000 
+  });
+
+  // PRINTING LIVE CODE DIRECTLY INTO YOUR TERMINAL LOG:
+  console.log(`\n============================================`);
+  console.log(`📧 Y4Y DISPATCH FOR: ${email}`);
+  console.log(`🔑 SECURE 6-DIGIT CODE IS: ${otp}`);
+  console.log(`============================================\n`);
+
+  res.json({ success: true, message: "Verification dispatch sequence initialized." });
+});
+
+app.post("/api/auth/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return badRequest(res, "Missing parameter parameters.");
+
+  const cachedRecord = verificationCache.get(email.toLowerCase().trim());
+  if (!cachedRecord) return badRequest(res, "No validation lifecycle found for this email profile.");
+
+  if (Date.now() > cachedRecord.expiresAt) {
+    verificationCache.delete(email.toLowerCase().trim());
+    return badRequest(res, "Your verification code has expired. Please try again.");
+  }
+
+  if (cachedRecord.otp !== String(otp).trim()) {
+    return badRequest(res, "Incorrect code entered. Please check and try again.");
+  }
+
+  // Tokens match up cleanly. Flush structural caching state and authorize submission
+  verificationCache.delete(email.toLowerCase().trim());
+  res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
 // Organizations (Directory)
 // ---------------------------------------------------------------------------
 
 app.get("/api/organizations", (req, res) => {
   const db = readDb();
-  let list = [...db.organizations];
+  
+  // 🔄 MODIFIED: Only filter and show items that have passed admin approval layout metrics
+  let list = db.organizations.filter((o) => o.verified === true);
 
   // Filters
   if (req.query.region) {
@@ -143,12 +195,12 @@ app.post("/api/organizations", async (req, res) => {
     focusAreas: Array.isArray(req.body.focusAreas) ? req.body.focusAreas : [],
     tags: req.body.tags ? req.body.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
     logoUrl: req.body.logoUrl || "",
-    verified: false, // Starts as pending unverified
+    verified: false, // Starts as pending unverified review hold
     createdAt: new Date().toISOString()
   };
 
   db.organizations.push(org);
-  db.nextOrgId = (db.nextOrgId || total) + 1;
+  db.nextOrgId = (db.nextOrgId || db.organizations.length) + 1;
   await writeDb(db);
 
   res.status(201).json(org);
