@@ -385,6 +385,27 @@ async function loadOrgsList() {
     } else {
       listEl.innerHTML = data.organizations.map(orgListItemHtml).join("");
     }
+      function orgListItemHtml(org) {
+  return `
+    <div class="org-list-item">
+      <div class="org-item-content">
+        <!-- Add onclick here to trigger the popup modal -->
+        <h3 class="org-item-title" onclick="openOrgDetailsModal('${org._id || org.id}')" style="cursor: pointer;">
+          ${org.name}
+        </h3>
+        <p class="org-item-meta">
+          📍 ${org.city ? org.city + ', ' : ''}${org.countryName || org.countryCode} 
+          · 🏷️ <span class="badge">${org.category}</span>
+        </p>
+        <p class="org-item-desc">${org.description || 'No description provided.'}</p>
+      </div>
+      <div class="org-item-actions">
+        <!-- Alternative button action -->
+        <button class="btn-secondary" onclick="openOrgDetailsModal('${org._id || org.id}')">View Details</button>
+      </div>
+    </div>
+  `;
+}
 
     renderPagination(data.page, data.totalPages);
   } catch (err) {
