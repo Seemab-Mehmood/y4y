@@ -512,6 +512,10 @@ async function verifyOtpAndSubmitOrg() {
     const otpInput = document.getElementById("verificationOtpInput");
     const userEnteredOtp = otpInput ? otpInput.value.trim() : "";
 
+    const activeView = document.getElementById("verificationActiveView");
+    const successView = document.getElementById("verificationSuccessView");
+    const modalWindow = document.getElementById("verificationModalWindow");
+
     if (!userEnteredOtp) {
         showToast("Please enter the verification code.", "error");
         return;
@@ -532,10 +536,6 @@ async function verifyOtpAndSubmitOrg() {
                 body: JSON.stringify(pendingOrgPayload) 
             });
 
-            // Close down form models and overlays
-            closeModal("emailVerificationModal");
-            closeModal("registerOrgModal");
-            
             // Clear temporary tracking profiles state map variables
             pendingOrgPayload = null;
             generatedOtpCode = null;
@@ -550,8 +550,37 @@ async function verifyOtpAndSubmitOrg() {
             if (state.view === "directory") loadOrgsList();
             refreshTotalCount();
             
-            // Step 4: Display review period confirmation layout notice
-            alert("Success! The Y4Y team will review your submitted application within 24 hours and will notify via email about your successful directory registration.");
+            // 🌟 LAYOUT STATE ALTERATION: Instantly transform modal interior with beautiful success layout view
+            if (activeView && successView) {
+                activeView.style.display = "none";
+                successView.style.display = "block";
+                if (modalWindow) {
+                    modalWindow.style.borderColor = "#319795";
+                    modalWindow.style.background = "#F6FEFF";
+                }
+                
+                // Optional: Ensure that reopening the modal next time resets the view back to the entry form
+                const closeBtn = successView.querySelector("button");
+                if (closeBtn) {
+                    closeBtn.addEventListener("click", () => {
+                        setTimeout(() => {
+                            activeView.style.display = "block";
+                            successView.style.display = "none";
+                            if (modalWindow) {
+                                modalWindow.style.borderColor = "#f0f0f0";
+                                modalWindow.style.background = "#fff";
+                            }
+                            if (otpInput) otpInput.value = "";
+                        }, 400);
+                    });
+                }
+            } else {
+                // Fallback safe mechanism if elements aren't caught in DOM tree
+                alert("Success! The Y4Y team will review your submitted application weekly.");
+                closeModal("emailVerificationModal");
+                closeModal("registerOrgModal");
+            }
+            
         } catch (err) {
             showToast(err.message || "Failed to commit organization creation rules.", "error");
         }
