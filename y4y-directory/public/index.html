@@ -444,7 +444,7 @@
         </div>
       </div>
 
-      <!-- Youth Pledge -->
+   <!-- Youth Pledge -->
       <div class="pledge-card">
         <div class="pledge-left">
           <h2>The Y4Y Youth Pledge</h2>
@@ -456,6 +456,24 @@
             <li>📣 Amplify marginalized youth voices</li>
             <li>🔍 Maintain transparency in operations</li>
           </ul>
+
+          <!-- Long Detailed Extension Tag for Governance & Moderation Framework -->
+          <details style="margin-top: 22px; padding: 16px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; cursor: pointer; color: #fff; font-size: 14px; font-family: 'Space Grotesk', sans-serif;">
+            <summary style="font-weight: 600; outline: none; user-select: none; color: #E8A838; display: list-item;">📋 View Extended Pledge Bylaws & Policy Framework</summary>
+            <div style="margin-top: 14px; line-height: 1.6; color: #E2E8F0; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.12); cursor: default;" onclick="event.stopPropagation();">
+              <p style="margin-bottom: 12px;">
+                By committing to this digital charter, structural youth organizations formally align with the <strong>Vervoort Model of Youth Governance</strong>. Signatories actively transition from traditional volunteer models to establish recognized stakeholder seats in regional structural development, project management, and global policy design.
+              </p>
+              
+              <h4 style="margin: 14px 0 6px 0; color: #44BBA4; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔍 Weekly Compliance & Review Mandate</h4>
+              <p style="margin-bottom: 12px;">
+                Submission of your directory profile initiates an ongoing quality-assurance framework. The Y4Y administrative board runs meticulous <strong>weekly audits</strong> of all active directory entries. To ensure directory health, entries containing inappropriate content, insufficient information, or an established false presence will face disciplinary steps. 
+              </p>
+              <p style="margin-bottom: 0; font-size: 13px; color: #CBD5E0;">
+                Following due notification and an observation window, non-compliant profiles will be permanently deleted from the active directory database to protect our global network's alignment and collaborative integrity.
+              </p>
+            </div>
+          </details>
         </div>
         <div class="pledge-right">
           <button class="btn-pledge" onclick="openModal('registerOrgModal')">
@@ -465,9 +483,7 @@
           <p class="pledge-note">Free forever. No strings attached.</p>
         </div>
       </div>
-    </div>
-  </section>
-</main>
+      
 
 <!-- ======================== MODALS ======================== -->
 
@@ -615,19 +631,40 @@
   </div>
 </div>
 
-  <div id="emailVerificationModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'emailVerificationModal')">
-  <div class="modal-window small-modal" style="max-width: 400px; padding: 25px; border-radius: 12px; background: #fff; text-align: center;">
-    <h3 style="margin-top: 0; color: #0D0F1A;">Verify Your Email</h3>
-    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">We have sent a 6-digit confirmation code to your provided organization email address. Please type it below to proceed.</p>
+<!-- Email Verification Modal -->
+<div id="emailVerificationModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'emailVerificationModal')">
+  <div class="modal-window small-modal" id="verificationModalWindow" style="max-width: 460px; padding: 30px; border-radius: 16px; background: #fff; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #f0f0f0; transition: all 0.3s ease;">
     
-    <div class="form-group" style="margin-bottom: 20px;">
-      <input type="text" id="verificationOtpInput" class="form-select" placeholder="Enter 6-Digit Code" style="text-align: center; font-size: 18px; letter-spacing: 4px; font-weight: bold;" maxlength="6" required />
+    <!-- Dynamic Container: This internal structural view switches on verification success -->
+    <div id="verificationActiveView">
+      <h3 style="margin-top: 0; color: #0D0F1A; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600;">Verify Your Email</h3>
+      <p style="font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.5;">We have sent a 6-digit confirmation code to your provided organization email address. Please type it below to proceed.</p>
+      
+      <div class="form-group" style="margin-bottom: 24px;">
+        <input type="text" id="verificationOtpInput" class="form-select" placeholder="000000" style="text-align: center; font-size: 24px; letter-spacing: 6px; font-weight: 700; border: 2px solid #E2E8F0; border-radius: 8px; padding: 10px; width: 80%; max-width: 240px; margin: 0 auto; display: block;" maxlength="6" required />
+      </div>
+      
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn-ghost" onclick="closeModal('emailVerificationModal')" style="padding: 10px 20px; font-weight: 500;">Cancel</button>
+        <button type="button" class="btn-primary" onclick="verifyOtpAndSubmitOrg()" style="padding: 10px 24px; background: #5B6EF5; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(91, 110, 245, 0.25);">Verify & Submit Application</button>
+      </div>
     </div>
-    
-    <div style="display: flex; gap: 10px; justify-content: center;">
-      <button type="button" class="btn-ghost" onclick="closeModal('emailVerificationModal')" style="padding: 10px 15px;">Cancel</button>
-      <button type="button" class="btn-primary" onclick="verifyOtpAndSubmitOrg()" style="padding: 10px 20px; background: #5B6EF5; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Verify & Submit Application</button>
+
+    <!-- Styled Success Layout Screen (Hidden by default, triggered by app.js) -->
+    <div id="verificationSuccessView" style="display: none; padding: 10px 0;">
+      <div style="width: 72px; height: 72px; background: #E6FFFA; color: #319795; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 20px;">✓</div>
+      <h3 style="margin-top: 0; color: #234E52; font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;">Email Verified!</h3>
+      <p style="font-size: 15px; color: #2D3748; font-weight: 500; margin-bottom: 16px;">Your organization profile has been successfully transmitted and added to the database directory pipelines.</p>
+      
+      <!-- Crucial Compliance Review Notice Board -->
+      <div style="background: #FFFAF0; border-left: 4px solid #DD6B20; padding: 14px; border-radius: 6px; text-align: left; margin-bottom: 24px;">
+        <h4 style="margin: 0 0 6px 0; color: #DD6B20; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">⚠️ Review & Moderation Policy Notice</h4>
+        <p style="margin: 0; font-size: 13px; color: #7B341E; line-height: 1.55;">Following successful submission to the global registry directory, our operational board conducts meticulous weekly audits of all structural inputs. If a profile is found to contain inappropriate themes, insufficient documentation, or evidence of a false presence, a formal due notification will be issued. Failure to rectify compliance thresholds will result in the immediate deletion of the registered organization from the Y4Y directory database.</p>
+      </div>
+
+      <button type="button" class="btn-primary" onclick="closeModal('emailVerificationModal')" style="padding: 12px 32px; background: #319795; color: white; border: none; border-radius: 8px; font-weight: 600; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(49, 151, 149, 0.25);">Acknowledge & Close</button>
     </div>
+
   </div>
 </div>
   
