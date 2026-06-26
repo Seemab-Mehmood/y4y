@@ -51,12 +51,13 @@ function wireNavLinks() {
     });
   });
 }
-
-// ---------------------------------------------------------------------------
-// View switching
-// ---------------------------------------------------------------------------
-
+// SWITCHING VIEW //
 function switchView(view) {
+  // If 'view-' was accidentally included in the parameter, strip it out for consistency
+  if (view.startsWith('view-')) {
+    view = view.replace('view-', '');
+  }
+
   state.view = view;
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
   document.getElementById(`view-${view}`).classList.add("active");
@@ -76,7 +77,7 @@ function switchView(view) {
   } else if (view === "empower") {
     loadEmpowerStats();
   } else if (view === "pledge-details") {
-    // Custom routines for pledge details initialization can be declared here if needed
+    // This will now match perfectly whether you pass 'pledge-details' or 'view-pledge-details'
   }
 }
 
