@@ -221,7 +221,7 @@ app.get("/api/collaborations", (req, res) => {
 });
 
 app.post("/api/collaborations", async (req, res) => {
-  const { title, organizationName, type, description } = req.body;
+  const { title, organizationName, type, description, applicationUrl } = req.body;
   if (!title || !organizationName || !type || !description) {
     return badRequest(res, "Missing required collaboration fields");
   }
@@ -235,6 +235,7 @@ app.post("/api/collaborations", async (req, res) => {
     organizationName,
     type,
     description,
+    applicationUrl: applicationUrl || "", // <-- Added applicationUrl to the database object string array data mapping structure layout properties parameters
     skills: req.body.skills ? req.body.skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
     maxPartners: parseInt(req.body.maxPartners) || 1,
     deadline: req.body.deadline || "",
@@ -273,7 +274,7 @@ app.get("/api/invitations", (req, res) => {
 });
 
 app.post("/api/invitations", async (req, res) => {
-  const { title, organizationName, type, description } = req.body;
+  const { title, organizationName, type, description, applicationUrl } = req.body;
   if (!title || !organizationName || !type || !description) {
     return badRequest(res, "Missing required opportunity fields");
   }
@@ -287,6 +288,7 @@ app.post("/api/invitations", async (req, res) => {
     organizationName,
     type,
     description,
+    applicationUrl: applicationUrl || "", // <-- Added applicationUrl to the database object structure
     benefits: req.body.benefits ? req.body.benefits.split(",").map((b) => b.trim()).filter(Boolean) : [],
     deadline: req.body.deadline || "",
     applicantCount: 0,
