@@ -820,6 +820,7 @@ const COLLAB_COLORS = {
   Campaign: "#C5383C", Exchange: "#44BBA4", Workshop: "#E8A838"
 };
 
+// 1. UPDATE THIS FUNCTION TO STORE APPLICATION URL IN THE DATA ATTRIBUTE
 function collabCardHtml(c) {
   const color = COLLAB_COLORS[c.type] || "#5B6EF5";
   return `
@@ -831,17 +832,25 @@ function collabCardHtml(c) {
       ${c.skills && c.skills.length ? `<div class="collab-skills">${c.skills.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join("")}</div>` : ""}
       <div class="collab-footer">
         <span class="collab-meta">${c.interestedCount || 0} interested · ${c.maxPartners} partner spots${c.deadline ? " · due " + escapeHtml(c.deadline) : ""}</span>
-        <button class="btn-apply" onclick="expressInterest('${c.id}', this)">Connect</button>
+        <button class="btn-apply" data-url="${escapeHtml(c.applicationUrl || '')}" onclick="expressInterest('${c.id}', this)">Connect</button>
       </div>
     </div>`;
 }
 
+// 2. UPDATE THIS FUNCTION TO OPEN THE URL IN A NEW TAB IF PRESENT
 async function expressInterest(id, btn) {
+  const appUrl = btn.getAttribute("data-url");
   try {
     const collab = await apiFetch(`/api/collaborations/${id}/interest`, { method: "POST" });
     btn.closest(".collab-card").querySelector(".collab-meta").innerHTML =
       `${collab.interestedCount} interested · ${collab.maxPartners} partner spots${collab.deadline ? " · due " + escapeHtml(collab.deadline) : ""}`;
-    showToast("Connection request sent! Check your email for next steps.");
+    
+    if (appUrl) {
+      showToast("Redirecting to collaboration application form...");
+      window.open(appUrl, "_blank");
+    } else {
+      showToast("Connection request sent! Check your email for next steps.");
+    }
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -897,6 +906,7 @@ function filterInvitations(type, btn) {
   loadInvitations();
 }
 
+// 3. UPDATE THIS FUNCTION TO STORE APPLICATION URL IN THE DATA ATTRIBUTE
 function invitationCardHtml(inv) {
   return `
     <div class="invitation-card">
@@ -911,17 +921,25 @@ function invitationCardHtml(inv) {
         </div>` : ""}
       <div class="inv-footer">
         <span class="inv-deadline">${inv.deadline ? "Deadline: " + escapeHtml(inv.deadline) : "Rolling applications"} · ${inv.applicantCount || 0} applied</span>
-        <button class="btn-apply" onclick="applyToInvitation('${inv.id}', this)">Apply</button>
+        <button class="btn-apply" data-url="${escapeHtml(inv.applicationUrl || '')}" onclick="applyToInvitation('${inv.id}', this)">Apply</button>
       </div>
     </div>`;
 }
 
+// 4. UPDATE THIS FUNCTION TO OPEN THE URL IN A NEW TAB IF PRESENT
 async function applyToInvitation(id, btn) {
+  const appUrl = btn.getAttribute("data-url");
   try {
     const inv = await apiFetch(`/api/invitations/${id}/apply`, { method: "POST" });
     btn.closest(".invitation-card").querySelector(".inv-deadline").innerHTML =
       `${inv.deadline ? "Deadline: " + escapeHtml(inv.deadline) : "Rolling applications"} · ${inv.applicantCount} applied`;
-    showToast("Application started! Check your email for next steps.");
+    
+    if (appUrl) {
+      showToast("Opening application form...");
+      window.open(appUrl, "_blank");
+    } else {
+      showToast("Application started! Check your email for next steps.");
+    }
   } catch (err) {
     showToast(err.message, "error");
   }
