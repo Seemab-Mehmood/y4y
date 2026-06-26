@@ -823,6 +823,8 @@ const COLLAB_COLORS = {
 
 function collabCardHtml(c) {
   const color = COLLAB_COLORS[c.type] || "#5B6EF5";
+  // Make sure we're properly encoding the URL
+  const appUrl = c.applicationUrl || '';
   return `
     <div class="collab-card">
       <span class="collab-type-badge" style="background:${color}20; color:${color}">${escapeHtml(c.type)}</span>
@@ -832,7 +834,7 @@ function collabCardHtml(c) {
       ${c.skills && c.skills.length ? `<div class="collab-skills">${c.skills.map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join("")}</div>` : ""}
       <div class="collab-footer">
         <span class="collab-meta">${c.interestedCount || 0} interested · ${c.maxPartners} partner spots${c.deadline ? " · due " + escapeHtml(c.deadline) : ""}</span>
-        <button class="btn-apply" data-url="${escapeHtml(c.applicationUrl || '')}" onclick="expressInterest('${c.id}', this)">Connect</button>
+        <button class="btn-apply" data-url="${escapeHtml(appUrl)}" onclick="expressInterest('${c.id}', this)">Connect</button>
       </div>
     </div>`;
 }
@@ -844,8 +846,9 @@ async function expressInterest(id, btn) {
     btn.closest(".collab-card").querySelector(".collab-meta").innerHTML =
       `${collab.interestedCount} interested · ${collab.maxPartners} partner spots${collab.deadline ? " · due " + escapeHtml(collab.deadline) : ""}`;
     
-    if (appUrl) {
+    if (appUrl && appUrl.trim() !== '') {
       showToast("Redirecting to collaboration application form...");
+      // Open in new tab for better UX
       window.open(appUrl, "_blank");
     } else {
       showToast("Connection request sent! Check your email for next steps.");
@@ -910,6 +913,7 @@ function filterInvitations(type, btn) {
 }
 
 function invitationCardHtml(inv) {
+  const appUrl = inv.applicationUrl || '';
   return `
     <div class="invitation-card">
       <span class="inv-type">${escapeHtml(inv.type)}</span>
@@ -923,11 +927,10 @@ function invitationCardHtml(inv) {
         </div>` : ""}
       <div class="inv-footer">
         <span class="inv-deadline">${inv.deadline ? "Deadline: " + escapeHtml(inv.deadline) : "Rolling applications"} · ${inv.applicantCount || 0} applied</span>
-        <button class="btn-apply" data-url="${escapeHtml(inv.applicationUrl || '')}" onclick="applyToInvitation('${inv.id}', this)">Apply</button>
+        <button class="btn-apply" data-url="${escapeHtml(appUrl)}" onclick="applyToInvitation('${inv.id}', this)">Apply</button>
       </div>
     </div>`;
 }
-
 async function applyToInvitation(id, btn) {
   const appUrl = btn.getAttribute("data-url");
   try {
@@ -946,24 +949,23 @@ async function applyToInvitation(id, btn) {
   }
 }
 
-async function submitInvitation(event) {
-  event.preventDefault();
-  const form = event.target;
-  const formData = new FormData(form);
-  const payload = Object.fromEntries(formData.entries());
-
+async function applyToInvitation(id, btn) {
+  const appUrl = btn.getAttribute("data-url");
   try {
-    await apiFetch("/api/invitations", { method: "POST", body: JSON.stringify(payload) });
-    showToast("✨ Opportunity posted!");
-    closeModal("createInvitationModal");
-    form.reset();
-    loadInvitations();
-    loadStats();
+    const inv = await apiFetch(`/api/invitations/${id}/apply`, { method: "POST" });
+    btn.closest(".invitation-card").querySelector(".inv-deadline").innerHTML =
+      `${inv.deadline ? "Deadline: " + escapeHtml(inv.deadline) : "Rolling applications"} · ${inv.applicantCount} applied`;
+    
+    if (appUrl && appUrl.trim() !== '') {
+      showToast("Opening application form...");
+      window.open(appUrl, "_blank");
+    } else {
+      showToast("Application started! Check your email for next steps.");
+    }
   } catch (err) {
     showToast(err.message, "error");
   }
 }
-
 // ---------------------------------------------------------------------------
 // EMPOWER HUB
 // ---------------------------------------------------------------------------
