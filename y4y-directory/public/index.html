@@ -861,6 +861,20 @@
   </div>
 </div>
 
+  <!-- ORGANIZATION DETAILS MODAL -->
+<div id="orgDetailsModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'orgDetailsModal')">
+  <div class="modal-window" style="max-width: 600px; width: 90%; padding: 30px; border-radius: 12px; background: #fff; position: relative;">
+    <button class="modal-close-btn" onclick="closeModal('orgDetailsModal')" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+    
+    <div id="orgDetailsContent">
+      <!-- Dynamic content will be injected here by app.js -->
+      <div style="text-align: center; padding: 20px;">
+        <p>Loading organization profile...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notification -->
 <div class="toast" id="toast"></div>
 
