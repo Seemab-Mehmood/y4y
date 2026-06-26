@@ -75,7 +75,7 @@ function switchView(view) {
     loadInvitations();
   } else if (view === "empower") {
     loadEmpowerStats();
-  } else if (view === "view-pledge-details") {
+  } else if (view === "pledge-details") {
     // Custom routines for pledge details initialization can be declared here if needed
   }
 }
